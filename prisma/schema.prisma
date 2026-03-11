@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "cockroachdb"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  
+  savedAircraft   SavedAircraft[]
+  savedLocations  SavedLocation[]
+  userPreferences UserPreferences?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model SavedAircraft {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  icao24    String
+  callsign  String?
+  country   String?
+  notes     String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, icao24])
+  @@index([userId])
+  @@index([icao24])
+}
+
+model SavedLocation {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name        String
+  latitude    Float
+  longitude   Float
+  radius      Float    @default(25.0)
+  description String?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model UserPreferences {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Map preferences
+  defaultZoom      Int     @default(6)
+  defaultLatitude  Float   @default(39.8283)
+  defaultLongitude Float   @default(-98.5795)
+  
+  // Filter preferences
+  minAltitude      Float?
+  maxAltitude      Float?
+  minSpeed         Float?
+  maxSpeed         Float?
+  filterCountries  String[] // Array of country codes
+  
+  // Display preferences
+  showTrails       Boolean @default(true)
+  showHeatmap      Boolean @default(false)
+  clusterMarkers   Boolean @default(true)
+  
+  // Notification preferences
+  nearbyRadius     Float   @default(25.0)
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
