@@ -45,11 +45,32 @@ body {
 .aircraft-marker {
   background: transparent;
   border: none;
+  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
 }
 
 .aircraft-icon {
   font-size: 24px;
   color: #42a5f5;
+  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Prevent flicker during marker updates */
+.leaflet-marker-icon {
+  transition: opacity 0.2s ease;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Ensure markers stay visible during updates */
+.leaflet-marker-pane {
+  z-index: 600;
+}
+
+/* Smooth cluster animations */
+.marker-cluster {
   transition: all 0.3s ease;
 }
 

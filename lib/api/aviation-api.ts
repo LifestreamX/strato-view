@@ -10,7 +10,7 @@ import { isValidCoordinate } from '@/lib/utils/geo'
 
 const OPENSKY_API_URL = 'https://opensky-network.org/api/states/all'
 const CACHE_KEY = 'aircraft_data'
-const CACHE_TTL = 10000 // 10 seconds
+const CACHE_TTL = 15000 // 15 seconds - longer cache to reduce flicker
 const MAX_RETRIES = 3
 const INITIAL_RETRY_DELAY = 1000 // 1 second
 
@@ -114,32 +114,41 @@ export class AviationAPIService {
     return normalized
   }
 
-  async getAircraftData(useCache = true): Promise<NormalizedAircraft[] | null> {
+  async getAircraftData(useCache = true): Promise<NormalizedAircraft[]> {
     // Check cache first
     if (useCache && cache.has(CACHE_KEY)) {
       logger.debug('Returning cached aircraft data')
-      return cache.get<NormalizedAircraft[]>(CACHE_KEY)
+      return cache.get<NormalizedAircraft[]>(CACHE_KEY) || []
     }
 
     // Fetch fresh data
     const response = await this.fetchWithRetry()
 
-    if (!response || !response.states) {
-      // Return cached data if API fails
+    if (!response || !response.states || response.states.length === 0) {
+      // Return cached data if API fails or returns empty
       const cachedData = cache.get<NormalizedAircraft[]>(CACHE_KEY)
-      if (cachedData) {
-        logger.warn('API failed, using stale cache data')
+      if (cachedData && cachedData.length > 0) {
+        logger.warn('API failed or returned empty, using stale cache data')
         return cachedData
       }
-      logger.error('No data available (API failed and no cache)')
-      return null
+      logger.error('No data available (API failed/empty and no cache)')
+      // Return empty array instead of null to prevent UI from breaking
+      return []
     }
 
     // Normalize and cache
     const normalized = this.normalizeAircraftData(response.states)
-    cache.set(CACHE_KEY, normalized, CACHE_TTL)
 
-    logger.info(`Fetched and cached ${normalized.length} aircraft`)
+    // Only update cache if we have valid data
+    if (normalized.length > 0) {
+      cache.set(CACHE_KEY, normalized, CACHE_TTL)
+      logger.info(`Fetched and cached ${normalized.length} aircraft`)
+    } else {
+      logger.warn('Normalized data is empty, keeping old cache')
+      const cachedData = cache.get<NormalizedAircraft[]>(CACHE_KEY)
+      return cachedData || []
+    }
+
     return normalized
   }
 

@@ -92,15 +92,16 @@ export function AircraftMap({
   const createAircraftIcon = (heading: number, color = '#42a5f5') => {
     return L.divIcon({
       html: `
-        <div style="transform: rotate(${heading}deg); transition: transform 0.3s;">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="${color}">
+        <div style="transform: rotate(${heading}deg); transition: transform 0.5s ease; display: flex; align-items: center; justify-content: center;">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="0.5">
             <path d="M21,16v-2l-8-5V3.5C13,2.67,12.33,2,11.5,2S10,2.67,10,3.5V9l-8,5v2l8-2.5V19l-2,1.5V22l3.5-1l3.5,1v-1.5L13,19v-5.5L21,16z"/>
           </svg>
         </div>
       `,
       className: 'aircraft-marker',
-      iconSize: [24, 24],
-      iconAnchor: [12, 12],
+      iconSize: [28, 28],
+      iconAnchor: [14, 14],
+      popupAnchor: [0, -14],
     })
   }
 
@@ -108,26 +109,64 @@ export function AircraftMap({
   useEffect(() => {
     if (!mapRef.current || isLoading) return
 
+    // If no aircraft data, keep existing markers (don't clear)
+    if (!aircraft || aircraft.length === 0) {
+      console.warn('No aircraft data, keeping existing markers')
+      return
+    }
+
     const map = mapRef.current
-    const existingMarkers = new Map(markersRef.current)
-    const newMarkers = new Map<string, L.Marker>()
+    const currentMarkers = markersRef.current
+    const aircraftKeys = new Set(aircraft.map(ac => ac.icao24))
 
     // Update or create markers
     aircraft.forEach(ac => {
       const key = ac.icao24
-
-      let marker = existingMarkers.get(key)
+      let marker = currentMarkers.get(key)
 
       if (marker) {
-        // Update existing marker
-        marker.setLatLng([ac.latitude, ac.longitude])
-        marker.setIcon(createAircraftIcon(ac.heading || 0))
-        existingMarkers.delete(key)
+        // Update existing marker position smoothly
+        const currentLatLng = marker.getLatLng()
+        const newLatLng = L.latLng(ac.latitude, ac.longitude)
+
+        // Only update if position changed significantly (> 0.001 degrees)
+        const distance = currentLatLng.distanceTo(newLatLng)
+        if (distance > 100) {
+          // ~100 meters
+          marker.setLatLng(newLatLng)
+        }
+
+        // Only update icon if heading changed significantly (> 5 degrees)
+        const currentIcon = (marker as any)._icon
+        const oldHeading = (marker as any)._aircraftHeading || 0
+        const newHeading = ac.heading || 0
+
+        if (Math.abs(newHeading - oldHeading) > 5) {
+          marker.setIcon(createAircraftIcon(newHeading))
+          ;(marker as any)._aircraftHeading = newHeading
+        }
+
+        // Update popup data
+        const popupContent = `
+          <div class="p-2">
+            <h3 class="font-bold text-lg mb-2">✈️ ${ac.callsign}</h3>
+            <div class="space-y-1 text-sm">
+              <p><strong>ICAO24:</strong> ${ac.icao24}</p>
+              <p><strong>Country:</strong> ${ac.country}</p>
+              <p><strong>Altitude:</strong> ${formatAltitude(ac.altitude)}</p>
+              <p><strong>Speed:</strong> ${formatSpeed(ac.velocity)}</p>
+              <p><strong>Heading:</strong> ${formatHeading(ac.heading)} ${getCardinalDirection(ac.heading)}</p>
+              <p><strong>Position:</strong> ${ac.latitude.toFixed(4)}, ${ac.longitude.toFixed(4)}</p>
+            </div>
+          </div>
+        `
+        marker.setPopupContent(popupContent)
       } else {
         // Create new marker
         marker = L.marker([ac.latitude, ac.longitude], {
           icon: createAircraftIcon(ac.heading || 0),
         })
+        ;(marker as any)._aircraftHeading = ac.heading || 0
 
         const popupContent = `
           <div class="p-2">
@@ -154,21 +193,33 @@ export function AircraftMap({
         } else if (markerLayerRef.current) {
           markerLayerRef.current.addLayer(marker)
         }
-      }
 
-      newMarkers.set(key, marker)
-    })
-
-    // Remove old markers
-    existingMarkers.forEach(marker => {
-      if (showClusters && clusterGroupRef.current) {
-        clusterGroupRef.current.removeLayer(marker)
-      } else if (markerLayerRef.current) {
-        markerLayerRef.current.removeLayer(marker)
+        currentMarkers.set(key, marker)
       }
     })
 
-    markersRef.current = newMarkers
+    // Only remove markers that haven't been seen for multiple updates
+    // This prevents flicker when API temporarily returns empty or partial data
+    currentMarkers.forEach((marker, key) => {
+      if (!aircraftKeys.has(key)) {
+        // Mark as stale but don't remove immediately
+        const staleCount = ((marker as any)._staleCount || 0) + 1
+        ;(marker as any)._staleCount = staleCount
+
+        // Only remove after 3 consecutive updates without seeing this aircraft
+        if (staleCount > 3) {
+          if (showClusters && clusterGroupRef.current) {
+            clusterGroupRef.current.removeLayer(marker)
+          } else if (markerLayerRef.current) {
+            markerLayerRef.current.removeLayer(marker)
+          }
+          currentMarkers.delete(key)
+        }
+      } else {
+        // Reset stale count if aircraft is seen again
+        ;(marker as any)._staleCount = 0
+      }
+    })
   }, [aircraft, showClusters, isLoading, onAircraftClick])
 
   return (

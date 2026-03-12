@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
+import { useAircraftData } from '@/hooks/useAircraftData'
 import dynamic from 'next/dynamic'
 import { AircraftFilters, NormalizedAircraft } from '@/types/aircraft'
 import { Navigation } from '@/components/ui/Navigation'
@@ -20,12 +21,10 @@ const AircraftMap = dynamic(
 )
 
 export default function MapPage() {
-  const [aircraft, setAircraft] = useState<NormalizedAircraft[]>([])
+  const { aircraft, loading, error } = useAircraftData(true, 15000)
   const [filteredAircraft, setFilteredAircraft] = useState<
     NormalizedAircraft[]
   >([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [filters, setFilters] = useState<AircraftFilters>({})
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [showNearby, setShowNearby] = useState(false)
@@ -33,32 +32,7 @@ export default function MapPage() {
 
   const { location, getLocation, loading: locationLoading } = useGeolocation()
 
-  // Fetch aircraft data
-  useEffect(() => {
-    const fetchAircraft = async () => {
-      try {
-        const response = await fetch('/api/aircraft')
-        const data = await response.json()
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to fetch aircraft')
-        }
-
-        setAircraft(data.aircraft || [])
-        setError(null)
-      } catch (err: any) {
-        setError(err.message)
-        console.error('Error fetching aircraft:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchAircraft()
-    const interval = setInterval(fetchAircraft, 10000)
-
-    return () => clearInterval(interval)
-  }, [])
+  // (Removed duplicate polling: now handled by useAircraftData)
 
   // Apply filters
   useEffect(() => {
@@ -149,7 +123,7 @@ export default function MapPage() {
             <select
               value={nearbyRadius}
               onChange={e => setNearbyRadius(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-white/10 rounded border border-white/20 focus:border-aviation-blue focus:outline-none"
+              className="w-full px-3 py-2 bg-aviation-dark text-white border border-aviation-blue/40 rounded focus:border-aviation-blue focus:bg-aviation-dark/90 focus:text-white hover:bg-aviation-blue/20 transition-colors duration-200 outline-none"
             >
               <option value={10}>10 miles</option>
               <option value={25}>25 miles</option>

@@ -8,22 +8,22 @@ export async function GET(request: NextRequest) {
 
     const aircraft = await aviationAPI.getAircraftData(!noCache)
 
-    if (!aircraft) {
-      return NextResponse.json(
-        { error: 'Failed to fetch aircraft data', aircraft: [] },
-        { status: 503 }
-      )
-    }
-
+    // Always return data, even if empty array
     return NextResponse.json({
-      aircraft,
+      aircraft: aircraft || [],
       timestamp: Date.now(),
-      count: aircraft.length,
+      count: (aircraft || []).length,
+      cached: !noCache,
     })
   } catch (error) {
     console.error('Aircraft API error:', error)
     return NextResponse.json(
-      { error: 'Internal server error', aircraft: [] },
+      {
+        error: 'Internal server error',
+        aircraft: [],
+        timestamp: Date.now(),
+        count: 0,
+      },
       { status: 500 }
     )
   }
