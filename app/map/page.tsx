@@ -125,7 +125,7 @@ export default function MapPage() {
           onToggle={() => setIsFilterOpen(!isFilterOpen)}
         />
 
-        <div className="fixed top-20 left-4 z-[1000] bg-aviation-dark/90 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg">
+        <div className="fixed bottom-6 right-6 z-[1000] bg-aviation-dark/90 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg max-w-xs w-64">
           <div className="text-2xl font-bold mb-2">
             {filteredAircraft.length.toLocaleString()}
           </div>
