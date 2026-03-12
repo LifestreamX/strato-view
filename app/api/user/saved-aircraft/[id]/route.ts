@@ -7,22 +7,24 @@ import { prisma } from '@/lib/db/prisma'
 
 export async function DELETE(
   request: NextRequest,
-  context: { params: { id: string } }
+  context: { params: { id: string } } | { params: Promise<{ id: string }> }
 ) {
+  // Support both Promise and non-Promise params (Next.js 16+ Turbopack)
+  const paramsObj = 'then' in context.params
+    ? await context.params
+    : context.params;
+  const { id } = paramsObj;
   try {
     const session = await getServerSession(authOptions)
-
     if (!session || !session.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-
     await prisma.savedAircraft.delete({
       where: {
-        id: context.params.id,
+        id,
         userId: session.user.id,
       },
     })
-
     return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Delete saved aircraft error:', error)
