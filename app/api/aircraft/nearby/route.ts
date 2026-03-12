@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+
+export const dynamic = 'force-dynamic'
 import { aviationAPI } from '@/lib/api/aviation-api'
 import { calculateDistance } from '@/lib/utils/geo'
 import { NearbyAircraft } from '@/types/aircraft'
