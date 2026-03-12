@@ -7,7 +7,7 @@ import { prisma } from '@/lib/db/prisma'
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -18,7 +18,7 @@ export async function DELETE(
 
     await prisma.savedAircraft.delete({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
     })
