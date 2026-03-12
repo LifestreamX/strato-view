@@ -105,122 +105,168 @@ export function AircraftMap({
     })
   }
 
-  // Update aircraft markers
+  // Update aircraft markers with optimized batching
   useEffect(() => {
     if (!mapRef.current || isLoading) return
 
-    // If no aircraft data, keep existing markers (don't clear)
+    console.log('[AircraftMap] Updating markers:', {
+      aircraftCount: aircraft.length,
+      currentMarkers: markersRef.current.size,
+    })
+
+    // If no aircraft data, clear all markers
     if (!aircraft || aircraft.length === 0) {
-      console.warn('No aircraft data, keeping existing markers')
+      console.log('[AircraftMap] No aircraft data, clearing all markers')
+      markersRef.current.forEach((marker, key) => {
+        if (showClusters && clusterGroupRef.current) {
+          clusterGroupRef.current.removeLayer(marker)
+        } else if (markerLayerRef.current) {
+          markerLayerRef.current.removeLayer(marker)
+        }
+      })
+      markersRef.current.clear()
       return
     }
 
-    const map = mapRef.current
-    const currentMarkers = markersRef.current
-    const aircraftKeys = new Set(aircraft.map(ac => ac.icao24))
+    // Use requestAnimationFrame to batch updates and prevent flickering
+    const updateMarkers = () => {
+      const map = mapRef.current
+      if (!map) return
 
-    // Update or create markers
-    aircraft.forEach(ac => {
-      const key = ac.icao24
-      let marker = currentMarkers.get(key)
+      const currentMarkers = markersRef.current
+      const aircraftKeys = new Set(aircraft.map(ac => ac.icao24))
+      const markersToAdd: L.Marker[] = []
+      const markersToRemove: L.Marker[] = []
 
-      if (marker) {
-        // Update existing marker position smoothly
-        const currentLatLng = marker.getLatLng()
-        const newLatLng = L.latLng(ac.latitude, ac.longitude)
+      let createdCount = 0
+      let updatedCount = 0
 
-        // Only update if position changed significantly (> 0.001 degrees)
-        const distance = currentLatLng.distanceTo(newLatLng)
-        if (distance > 100) {
-          // ~100 meters
-          marker.setLatLng(newLatLng)
-        }
+      // First pass: Update or prepare new markers (without adding to map yet)
+      aircraft.forEach(ac => {
+        const key = ac.icao24
+        let marker = currentMarkers.get(key)
 
-        // Only update icon if heading changed significantly (> 5 degrees)
-        const currentIcon = (marker as any)._icon
-        const oldHeading = (marker as any)._aircraftHeading || 0
-        const newHeading = ac.heading || 0
+        if (marker) {
+          // Update existing marker position smoothly
+          updatedCount++
+          const currentLatLng = marker.getLatLng()
+          const newLatLng = L.latLng(ac.latitude, ac.longitude)
 
-        if (Math.abs(newHeading - oldHeading) > 5) {
-          marker.setIcon(createAircraftIcon(newHeading))
-          ;(marker as any)._aircraftHeading = newHeading
-        }
-
-        // Update popup data
-        const popupContent = `
-          <div class="p-2">
-            <h3 class="font-bold text-lg mb-2">✈️ ${ac.callsign}</h3>
-            <div class="space-y-1 text-sm">
-              <p><strong>ICAO24:</strong> ${ac.icao24}</p>
-              <p><strong>Country:</strong> ${ac.country}</p>
-              <p><strong>Altitude:</strong> ${formatAltitude(ac.altitude)}</p>
-              <p><strong>Speed:</strong> ${formatSpeed(ac.velocity)}</p>
-              <p><strong>Heading:</strong> ${formatHeading(ac.heading)} ${getCardinalDirection(ac.heading)}</p>
-              <p><strong>Position:</strong> ${ac.latitude.toFixed(4)}, ${ac.longitude.toFixed(4)}</p>
-            </div>
-          </div>
-        `
-        marker.setPopupContent(popupContent)
-      } else {
-        // Create new marker
-        marker = L.marker([ac.latitude, ac.longitude], {
-          icon: createAircraftIcon(ac.heading || 0),
-        })
-        ;(marker as any)._aircraftHeading = ac.heading || 0
-
-        const popupContent = `
-          <div class="p-2">
-            <h3 class="font-bold text-lg mb-2">✈️ ${ac.callsign}</h3>
-            <div class="space-y-1 text-sm">
-              <p><strong>ICAO24:</strong> ${ac.icao24}</p>
-              <p><strong>Country:</strong> ${ac.country}</p>
-              <p><strong>Altitude:</strong> ${formatAltitude(ac.altitude)}</p>
-              <p><strong>Speed:</strong> ${formatSpeed(ac.velocity)}</p>
-              <p><strong>Heading:</strong> ${formatHeading(ac.heading)} ${getCardinalDirection(ac.heading)}</p>
-              <p><strong>Position:</strong> ${ac.latitude.toFixed(4)}, ${ac.longitude.toFixed(4)}</p>
-            </div>
-          </div>
-        `
-
-        marker.bindPopup(popupContent)
-
-        if (onAircraftClick) {
-          marker.on('click', () => onAircraftClick(ac))
-        }
-
-        if (showClusters && clusterGroupRef.current) {
-          clusterGroupRef.current.addLayer(marker)
-        } else if (markerLayerRef.current) {
-          markerLayerRef.current.addLayer(marker)
-        }
-
-        currentMarkers.set(key, marker)
-      }
-    })
-
-    // Only remove markers that haven't been seen for multiple updates
-    // This prevents flicker when API temporarily returns empty or partial data
-    currentMarkers.forEach((marker, key) => {
-      if (!aircraftKeys.has(key)) {
-        // Mark as stale but don't remove immediately
-        const staleCount = ((marker as any)._staleCount || 0) + 1
-        ;(marker as any)._staleCount = staleCount
-
-        // Only remove after several consecutive updates without seeing this aircraft
-        // (increased threshold to reduce flicker from transient/partial API responses)
-        if (staleCount > 6) {
-          if (showClusters && clusterGroupRef.current) {
-            clusterGroupRef.current.removeLayer(marker)
-          } else if (markerLayerRef.current) {
-            markerLayerRef.current.removeLayer(marker)
+          // Calculate distance and update if changed significantly
+          const distance = currentLatLng.distanceTo(newLatLng)
+          if (distance > 10) {
+            // Reduced threshold for smoother updates (~10 meters)
+            // Use smooth animation for position updates
+            marker.setLatLng(newLatLng)
           }
+
+          // Update icon only if heading changed significantly
+          const oldHeading = (marker as any)._aircraftHeading || 0
+          const newHeading = ac.heading || 0
+          const headingDiff = Math.abs(newHeading - oldHeading)
+
+          if (headingDiff > 5) {
+            marker.setIcon(createAircraftIcon(newHeading))
+            ;(marker as any)._aircraftHeading = newHeading
+          }
+
+          // Store updated aircraft data on marker for popup
+          ;(marker as any)._aircraftData = ac
+        } else {
+          // Create new marker
+          createdCount++
+          marker = L.marker([ac.latitude, ac.longitude], {
+            icon: createAircraftIcon(ac.heading || 0),
+            // Enable smooth panning
+            riseOnHover: true,
+          })
+          ;(marker as any)._aircraftHeading = ac.heading || 0
+          ;(marker as any)._aircraftData = ac
+
+          // Generate popup content
+          const popupContent = `
+            <div class="p-2 min-w-[200px]">
+              <h3 class="font-bold text-lg mb-2">✈️ ${ac.callsign}</h3>
+              <div class="space-y-1 text-sm">
+                <p><strong>ICAO24:</strong> ${ac.icao24}</p>
+                <p><strong>Country:</strong> ${ac.country}</p>
+                <p><strong>Altitude:</strong> ${formatAltitude(ac.altitude)}</p>
+                <p><strong>Speed:</strong> ${formatSpeed(ac.velocity)}</p>
+                <p><strong>Heading:</strong> ${formatHeading(ac.heading)} ${getCardinalDirection(ac.heading)}</p>
+                <p><strong>Position:</strong> ${ac.latitude.toFixed(4)}, ${ac.longitude.toFixed(4)}</p>
+              </div>
+            </div>
+          `
+          marker.bindPopup(popupContent)
+
+          if (onAircraftClick) {
+            marker.on('click', () => onAircraftClick(ac))
+          }
+
+          markersToAdd.push(marker)
+          currentMarkers.set(key, marker)
+        }
+      })
+
+      // Second pass: Identify stale markers to remove
+      currentMarkers.forEach((marker, key) => {
+        if (!aircraftKeys.has(key)) {
+          markersToRemove.push(marker)
           currentMarkers.delete(key)
         }
-      } else {
-        // Reset stale count if aircraft is seen again
-        ;(marker as any)._staleCount = 0
+      })
+
+      // Batch add/remove operations to minimize reflows
+      if (markersToRemove.length > 0) {
+        if (showClusters && clusterGroupRef.current) {
+          clusterGroupRef.current.removeLayers(markersToRemove)
+        } else if (markerLayerRef.current) {
+          markersToRemove.forEach(m => markerLayerRef.current?.removeLayer(m))
+        }
       }
-    })
+
+      if (markersToAdd.length > 0) {
+        if (showClusters && clusterGroupRef.current) {
+          clusterGroupRef.current.addLayers(markersToAdd)
+        } else if (markerLayerRef.current) {
+          markersToAdd.forEach(m => markerLayerRef.current?.addLayer(m))
+        }
+      }
+
+      // Update popups for all markers in batch (only if data changed)
+      currentMarkers.forEach((marker, key) => {
+        const ac = (marker as any)._aircraftData
+        if (ac) {
+          const popupContent = `
+            <div class="p-2 min- w-[200px]">
+              <h3 class="font-bold text-lg mb-2">✈️ ${ac.callsign}</h3>
+              <div class="space-y-1 text-sm">
+                <p><strong>ICAO24:</strong> ${ac.icao24}</p>
+                <p><strong>Country:</strong> ${ac.country}</p>
+                <p><strong>Altitude:</strong> ${formatAltitude(ac.altitude)}</p>
+                <p><strong>Speed:</strong> ${formatSpeed(ac.velocity)}</p>
+                <p><strong>Heading:</strong> ${formatHeading(ac.heading)} ${getCardinalDirection(ac.heading)}</p>
+                <p><strong>Position:</strong> ${ac.latitude.toFixed(4)}, ${ac.longitude.toFixed(4)}</p>
+              </div>
+            </div>
+          `
+          marker.setPopupContent(popupContent)
+        }
+      })
+
+      if (createdCount > 0 || updatedCount > 0 || markersToRemove.length > 0) {
+        console.log(
+          `[AircraftMap] Updates - Created: ${createdCount}, Updated: ${updatedCount}, Removed: ${markersToRemove.length}, Total: ${currentMarkers.size}`
+        )
+      }
+    }
+
+    // Use requestAnimationFrame for smooth, non-blocking updates
+    const rafId = requestAnimationFrame(updateMarkers)
+
+    return () => {
+      cancelAnimationFrame(rafId)
+    }
   }, [aircraft, showClusters, isLoading, onAircraftClick])
 
   return (

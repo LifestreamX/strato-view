@@ -21,7 +21,10 @@ const AircraftMap = dynamic(
 )
 
 export default function MapPage() {
-  const { aircraft, loading, error } = useAircraftData(true, 15000)
+  const { aircraft, loading, error, dataSource, lastUpdate } = useAircraftData(
+    true,
+    15000
+  )
   const [filteredAircraft, setFilteredAircraft] = useState<
     NormalizedAircraft[]
   >([])
@@ -31,6 +34,18 @@ export default function MapPage() {
   const [nearbyRadius, setNearbyRadius] = useState(25)
 
   const { location, getLocation, loading: locationLoading } = useGeolocation()
+
+  // Log aircraft state changes for debugging
+  useEffect(() => {
+    console.log('[MapPage] Aircraft state updated:', {
+      count: aircraft.length,
+      dataSource,
+      sample: aircraft.slice(0, 2).map(a => ({
+        icao24: a.icao24,
+        callsign: a.callsign,
+      })),
+    })
+  }, [aircraft, dataSource])
 
   // (Removed duplicate polling: now handled by useAircraftData)
 
@@ -115,6 +130,27 @@ export default function MapPage() {
             {filteredAircraft.length.toLocaleString()}
           </div>
           <div className="text-sm text-blue-200">Aircraft Tracked</div>
+          <div className="mt-2 pt-2 border-t border-blue-500/30">
+            <div className="text-xs text-gray-300">
+              Source:{' '}
+              <span
+                className={
+                  dataSource === 'live'
+                    ? 'text-green-400 font-semibold'
+                    : dataSource === 'mock'
+                      ? 'text-yellow-400 font-semibold'
+                      : 'text-blue-400 font-semibold'
+                }
+              >
+                {dataSource.toUpperCase()}
+              </span>
+            </div>
+            {lastUpdate > 0 && (
+              <div className="text-xs text-gray-400 mt-1">
+                Updated: {new Date(lastUpdate).toLocaleTimeString()}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="fixed bottom-4 left-4 z-[1000] bg-aviation-dark/90 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg">

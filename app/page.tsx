@@ -1,9 +1,11 @@
 import Link from 'next/link'
+// import LottieCloudsBackground from './components/LottieCloudsBackground'
 
 export default function Home() {
   return (
-    <main className="min-h-screen hero-bg flex items-center">
-      <div className="container mx-auto px-4 py-32 flex flex-col items-center max-w-4xl">
+    <main className="min-h-screen hero-bg flex items-center relative overflow-hidden">
+      {/* Airplane animation removed per request */}
+      <div className="container mx-auto px-4 py-32 flex flex-col items-center max-w-4xl relative z-10">
         <div className="text-center w-full space-y-6">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
             ✈️ StratoView

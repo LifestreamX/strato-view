@@ -13,13 +13,26 @@ const OPENSKY_TOKEN_URL =
   process.env.OPENSKY_TOKEN_URL ||
   'https://opensky-network.org/auth/realms/opensky/protocol/openid-connect/token'
 const CACHE_KEY = 'aircraft_data'
-const CACHE_TTL = 60000 // 60 seconds - longer cache to avoid hitting rate limits
-const MAX_RETRIES = 3
-const INITIAL_RETRY_DELAY = 1000 // 1 second
+const CACHE_TTL = 600000 // 10 minutes - longer cache to avoid hitting rate limits
+const MAX_RETRIES = 2
+const INITIAL_RETRY_DELAY = 2000 // 2 seconds
 const OPENSKY_TOKEN_CACHE_KEY = 'opensky_token'
+const TOKEN_ERROR_COOLDOWN = 5 * 60 * 1000 // 5 minutes cooldown after token 403
+
+// Rate limiting for OpenSky API
+// Anonymous: 10 seconds between requests minimum
+// Authenticated: 5 seconds between requests (to be safe)
+const MIN_REQUEST_INTERVAL_ANONYMOUS = 10000 // 10 seconds
+const MIN_REQUEST_INTERVAL_AUTHENTICATED = 5000 // 5 seconds
+
+// When token endpoint returns 403 repeatedly we should avoid hammering it.
+let tokenErrorUntil = 0
+let lastOpenSkyRequestTime = 0
 
 export class AviationAPIService {
   private static instance: AviationAPIService
+  private lastFetchSource: 'live' | 'cache' | 'mock' | null = null
+  private lastFetchTime: number | null = null
 
   private constructor() {}
 
@@ -40,6 +53,23 @@ export class AviationAPIService {
     try {
       logger.debug(`Fetching aircraft data (attempt ${retryCount + 1})`)
 
+      // Rate limiting: ensure we don't make requests too frequently
+      const hasAuth = !!(
+        process.env.OPENSKY_USERNAME && process.env.OPENSKY_PASSWORD
+      )
+      const minInterval = hasAuth
+        ? MIN_REQUEST_INTERVAL_AUTHENTICATED
+        : MIN_REQUEST_INTERVAL_ANONYMOUS
+
+      const timeSinceLastRequest = Date.now() - lastOpenSkyRequestTime
+      if (timeSinceLastRequest < minInterval) {
+        const waitTime = minInterval - timeSinceLastRequest
+        logger.info(
+          `Rate limiting: waiting ${waitTime}ms before next OpenSky request`
+        )
+        await this.sleep(waitTime)
+      }
+
       // Prepare axios config
       const axiosConfig: any = {
         timeout: 15000,
@@ -48,83 +78,106 @@ export class AviationAPIService {
         },
       }
 
-      // Prefer OAuth2 client credentials if provided (OPENSKY_CLIENT_ID / OPENSKY_CLIENT_SECRET)
-      if (process.env.OPENSKY_CLIENT_ID && process.env.OPENSKY_CLIENT_SECRET) {
-        const cached = nodeCache.get<{ token: string }>(OPENSKY_TOKEN_CACHE_KEY)
-        if (cached && cached.token) {
-          axiosConfig.headers.Authorization = `Bearer ${cached.token}`
-          logger.debug('Using cached OpenSky OAuth token')
-        } else {
-          try {
-            const params = new URLSearchParams()
-            params.append('grant_type', 'client_credentials')
-            params.append('client_id', process.env.OPENSKY_CLIENT_ID)
-            params.append('client_secret', process.env.OPENSKY_CLIENT_SECRET)
+      // OpenSky now requires OAuth2 client credentials flow
+      const clientId = process.env.OPENSKY_CLIENT_ID
+      const clientSecret = process.env.OPENSKY_CLIENT_SECRET
+      let accessToken: string | null = null
 
-            let tokenResp
-            try {
-              tokenResp = await axios.post(
-                OPENSKY_TOKEN_URL,
-                params.toString(),
-                {
-                  headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                  },
-                  timeout: 10000,
-                }
-              )
-            } catch (firstErr: any) {
-              logger.warn('First token request failed, trying with Basic auth')
-              // Retry using HTTP Basic auth header (Keycloak sometimes expects this)
-              const basicAuth = Buffer.from(
-                `${process.env.OPENSKY_CLIENT_ID}:${process.env.OPENSKY_CLIENT_SECRET}`
-              ).toString('base64')
-              tokenResp = await axios.post(
-                OPENSKY_TOKEN_URL,
-                'grant_type=client_credentials',
-                {
-                  headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    Authorization: `Basic ${basicAuth}`,
-                  },
-                  timeout: 10000,
-                }
-              )
-            }
-
-            const tokenData = tokenResp?.data
-            if (tokenData && tokenData.access_token) {
-              const ttl = Math.max((tokenData.expires_in || 300) - 10, 10)
-              nodeCache.set(
-                OPENSKY_TOKEN_CACHE_KEY,
-                { token: tokenData.access_token },
-                ttl
-              )
-              axiosConfig.headers.Authorization = `Bearer ${tokenData.access_token}`
-              logger.info('Acquired new OpenSky OAuth token')
-            }
-          } catch (tokErr: any) {
-            logger.warn(
-              'Failed to acquire OpenSky OAuth token, using unauthenticated request'
+      if (clientId && clientSecret) {
+        logger.debug(
+          `[OpenSky OAuth2] Using clientId: ${clientId.slice(0, 6)}... (secret hidden)`
+        )
+        // Try to get cached token
+        accessToken = nodeCache.get<string>(OPENSKY_TOKEN_CACHE_KEY) || null
+        let tokenExpiresAt =
+          nodeCache.get<number>(`${OPENSKY_TOKEN_CACHE_KEY}_expires`) || 0
+        const now = Date.now()
+        logger.debug(
+          `[OpenSky OAuth2] Cached token: ${!!accessToken}, expires at: ${tokenExpiresAt}, now: ${now}`
+        )
+        // If no token or expired, fetch new token
+        if (!accessToken || now > tokenExpiresAt) {
+          // Avoid hammering token endpoint if recently failed
+          if (tokenErrorUntil && now < tokenErrorUntil) {
+            logger.error(
+              '[OpenSky OAuth2] Token endpoint in cooldown, skipping token fetch'
             )
+            throw new Error('Token endpoint in cooldown')
+          }
+          try {
+            logger.debug('[OpenSky OAuth2] Fetching new token...')
+            const tokenResp = await axios.post(
+              OPENSKY_TOKEN_URL,
+              new URLSearchParams({
+                grant_type: 'client_credentials',
+                client_id: clientId,
+                client_secret: clientSecret,
+              }),
+              {
+                headers: {
+                  'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                timeout: 10000,
+              }
+            )
+            accessToken = tokenResp.data.access_token
+            const expiresIn = tokenResp.data.expires_in || 1800 // seconds
+            // Refresh 30s before expiry
+            tokenExpiresAt = now + (expiresIn - 30) * 1000
+            nodeCache.set(OPENSKY_TOKEN_CACHE_KEY, accessToken, expiresIn - 30)
+            nodeCache.set(
+              `${OPENSKY_TOKEN_CACHE_KEY}_expires`,
+              tokenExpiresAt,
+              expiresIn - 30
+            )
+            logger.info(
+              `[OpenSky OAuth2] Obtained new token, expires in ${expiresIn}s (at ${tokenExpiresAt})`
+            )
+          } catch (err: any) {
+            logger.error(
+              '[OpenSky OAuth2] Failed to fetch token',
+              err?.response?.data || err
+            )
+            tokenErrorUntil = now + TOKEN_ERROR_COOLDOWN
+            throw new Error('Failed to fetch OpenSky OAuth2 token')
           }
         }
-      } else if (process.env.OPENSKY_USERNAME && process.env.OPENSKY_PASSWORD) {
-        // Fallback to legacy basic auth
-        axiosConfig.auth = {
-          username: process.env.OPENSKY_USERNAME,
-          password: process.env.OPENSKY_PASSWORD,
+        logger.debug(
+          `[OpenSky OAuth2] Using Bearer token: ${accessToken ? accessToken.slice(0, 12) + '...' : 'none'}`
+        )
+        axiosConfig.headers = {
+          ...axiosConfig.headers,
+          Authorization: `Bearer ${accessToken}`,
         }
-        logger.debug('Using OpenSky username/password auth')
+      } else {
+        logger.warn(
+          '[OpenSky OAuth2] No credentials configured - using anonymous access (strict rate limits apply)'
+        )
       }
 
-      const response = await axios.get<OpenSkyResponse>(
-        OPENSKY_API_URL,
-        axiosConfig
+      // Update last request time before making the request
+      lastOpenSkyRequestTime = Date.now()
+      logger.debug(`[OpenSky API] Requesting: ${OPENSKY_API_URL}`)
+      logger.debug(
+        `[OpenSky API] Headers: ${JSON.stringify(axiosConfig.headers)}`
       )
-
-      logger.apiRequest('GET', OPENSKY_API_URL, response.status)
-      return response.data
+      try {
+        const response = await axios.get<OpenSkyResponse>(
+          OPENSKY_API_URL,
+          axiosConfig
+        )
+        logger.debug('[OpenSky API] Response received')
+        if (response.data && (response.data as any).states) {
+          logger.info(
+            `[OpenSky API] Returned ${(response.data as any).states.length} aircraft`
+          )
+        }
+        logger.apiRequest('GET', OPENSKY_API_URL, response.status)
+        return response.data
+      } catch (err: any) {
+        logger.error('[OpenSky API] Request failed', err?.response?.data || err)
+        throw err
+      }
     } catch (error) {
       const axiosError = error as AxiosError
 
@@ -135,12 +188,38 @@ export class AviationAPIService {
         attempt: retryCount + 1,
       })
 
-      // If we're being rate-limited, don't keep retrying — return null so
-      // callers can use cached/stale data instead of hammering the API.
+      // Log response body from OpenSky if present to help debugging
+      if (axiosError.response && axiosError.response.data) {
+        logger.debug('OpenSky error body', axiosError.response.data)
+      }
+
+      // If we're being rate-limited, wait longer before retry
       if (status === 429) {
+        if (retryCount < MAX_RETRIES) {
+          // Exponential backoff with longer delays for rate limiting
+          const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount) * 10
+          logger.warn(
+            `Rate limited by OpenSky (429). Retrying in ${delay}ms... (attempt ${retryCount + 2})`
+          )
+          await this.sleep(delay)
+          return this.fetchWithRetry(retryCount + 1)
+        }
+
         logger.warn(
-          'OpenSky rate limit encountered (429); using cache if available'
+          'OpenSky rate limit encountered (429); max retries reached, using cache if available'
         )
+        return null
+      }
+
+      // For authentication errors, log but don't retry
+      if (status === 401 || status === 403) {
+        logger.error(
+          `OpenSky authentication failed (${status}). Check OPENSKY_CLIENT_ID and OPENSKY_CLIENT_SECRET environment variables.`
+        )
+        // Invalidate cached token on 401/403
+        nodeCache.del(OPENSKY_TOKEN_CACHE_KEY)
+        nodeCache.del(`${OPENSKY_TOKEN_CACHE_KEY}_expires`)
+        tokenErrorUntil = Date.now() + TOKEN_ERROR_COOLDOWN
         return null
       }
 
@@ -208,6 +287,8 @@ export class AviationAPIService {
     // Check cache first
     if (useCache && nodeCache.has(CACHE_KEY)) {
       logger.debug('Returning cached aircraft data (node-cache)')
+      this.lastFetchSource = 'cache'
+      this.lastFetchTime = Date.now()
       return nodeCache.get<NormalizedAircraft[]>(CACHE_KEY) || []
     }
 
@@ -215,16 +296,11 @@ export class AviationAPIService {
     const response = await this.fetchWithRetry()
 
     if (!response || !response.states || response.states.length === 0) {
-      // Return cached data if API fails or returns empty
-      const cachedData = nodeCache.get<NormalizedAircraft[]>(CACHE_KEY)
-      if (cachedData && cachedData.length > 0) {
-        logger.warn(
-          'API failed or returned empty, using stale cache data (node-cache)'
-        )
-        return cachedData
-      }
-      logger.error('No data available (API failed/empty and no cache)')
-      // Return empty array instead of null to prevent UI from breaking
+      logger.error(
+        'No data available from OpenSky API (API failed/empty and no cache)'
+      )
+      this.lastFetchSource = 'live'
+      this.lastFetchTime = Date.now()
       return []
     }
 
@@ -237,10 +313,10 @@ export class AviationAPIService {
       logger.info(
         `Fetched and cached ${normalized.length} aircraft (node-cache)`
       )
+      this.lastFetchSource = 'live'
+      this.lastFetchTime = Date.now()
     } else {
-      logger.warn('Normalized data is empty, keeping old cache (node-cache)')
-      const cachedData = nodeCache.get<NormalizedAircraft[]>(CACHE_KEY)
-      return cachedData || []
+      logger.warn('Normalized data is empty, not updating cache')
     }
 
     return normalized
@@ -314,3 +390,13 @@ export class AviationAPIService {
 }
 
 export const aviationAPI = AviationAPIService.getInstance()
+
+// expose status getter for debug endpoints
+export const getAviationStatus = () => {
+  const inst = AviationAPIService.getInstance() as any
+  return {
+    lastFetchSource: inst.lastFetchSource ?? null,
+    lastFetchTime: inst.lastFetchTime ?? null,
+    cacheKeys: nodeCache.keys(),
+  }
+}

@@ -1,3 +1,14 @@
+/* Animated SVG clouds for homepage */
+.clouds-svg {
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+.animate-clouds ellipse {
+  filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.08));
+  transition: opacity 0.3s;
+}
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -83,9 +94,15 @@ body {
 
 /* Hero sky background (gradient + subtle clouds overlay) */
 .hero-bg {
-  background-image: linear-gradient(180deg, rgba(6,29,61,0.95), rgba(2,15,36,0.95)), url('/images/clouds.svg');
-  background-size: cover, 1200px 400px;
+  background-image:
+    linear-gradient(180deg, rgba(6, 29, 61, 0.95), rgba(2, 15, 36, 0.95)),
+    url('/images/clouds.svg');
+  background-size:
+    cover,
+    1200px 400px;
   background-repeat: no-repeat, repeat-x;
-  background-position: center top, top left;
+  background-position:
+    center top,
+    top left;
   background-blend-mode: normal;
 }

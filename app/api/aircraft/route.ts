@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-import { aviationAPI } from '@/lib/api/aviation-api'
+import { aviationAPI, getAviationStatus } from '@/lib/api/aviation-api'
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,6 +9,13 @@ export async function GET(request: NextRequest) {
     const noCache = searchParams.get('noCache') === 'true'
 
     const aircraft = await aviationAPI.getAircraftData(!noCache)
+    const status = getAviationStatus()
+
+    console.log('[Aircraft API] Returning data:', {
+      count: (aircraft || []).length,
+      source: status.lastFetchSource,
+      cached: !noCache,
+    })
 
     // Always return data, even if empty array
     return NextResponse.json({
@@ -16,6 +23,8 @@ export async function GET(request: NextRequest) {
       timestamp: Date.now(),
       count: (aircraft || []).length,
       cached: !noCache,
+      source: status.lastFetchSource || 'unknown',
+      lastFetchTime: status.lastFetchTime,
     })
   } catch (error) {
     console.error('Aircraft API error:', error)
@@ -25,6 +34,7 @@ export async function GET(request: NextRequest) {
         aircraft: [],
         timestamp: Date.now(),
         count: 0,
+        source: 'error',
       },
       { status: 500 }
     )

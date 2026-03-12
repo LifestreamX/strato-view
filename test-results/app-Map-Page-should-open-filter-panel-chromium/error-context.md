@@ -1,0 +1,76 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e5]:
+        - link "✈️ StratoView" [ref=e6] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e7]: ✈️
+          - generic [ref=e8]: StratoView
+        - generic [ref=e9]:
+          - link "Live Map" [ref=e10] [cursor=pointer]:
+            - /url: /map
+          - link "Dashboard" [ref=e11] [cursor=pointer]:
+            - /url: /dashboard
+          - link "Sign In" [ref=e12] [cursor=pointer]:
+            - /url: /auth/signin
+    - generic [ref=e13]:
+      - generic [ref=e15]:
+        - generic:
+          - generic [ref=e16]:
+            - button "Zoom in" [ref=e17] [cursor=pointer]: +
+            - button "Zoom out" [ref=e18] [cursor=pointer]: −
+          - generic [ref=e19]:
+            - link "Leaflet" [ref=e20] [cursor=pointer]:
+              - /url: https://leafletjs.com
+              - img [ref=e21]
+              - text: Leaflet
+            - text: "| ©"
+            - link "OpenStreetMap" [ref=e25] [cursor=pointer]:
+              - /url: https://www.openstreetmap.org/copyright
+            - text: contributors
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - heading "Filters" [level=3] [ref=e28]
+          - button "×" [ref=e29] [cursor=pointer]
+        - generic [ref=e30]:
+          - generic [ref=e31]:
+            - generic [ref=e32]: Altitude Range (meters)
+            - generic [ref=e33]:
+              - spinbutton [ref=e34]
+              - spinbutton [ref=e35]
+          - generic [ref=e36]:
+            - generic [ref=e37]: Speed Range (m/s)
+            - generic [ref=e38]:
+              - spinbutton [ref=e39]
+              - spinbutton [ref=e40]
+          - generic [ref=e41]:
+            - generic [ref=e42]: Country
+            - textbox "e.g., United States" [ref=e43]
+          - generic [ref=e44]:
+            - generic [ref=e45]: ICAO24
+            - textbox "Aircraft ID" [ref=e46]
+          - generic [ref=e47]:
+            - generic [ref=e48]: Callsign
+            - textbox "Flight callsign" [ref=e49]
+          - generic [ref=e50]:
+            - button "Apply" [ref=e51] [cursor=pointer]
+            - button "Reset" [ref=e52] [cursor=pointer]
+      - generic [ref=e53]:
+        - generic [ref=e54]: "0"
+        - generic [ref=e55]: Aircraft Tracked
+        - generic [ref=e57]: "Source: UNKNOWN"
+      - generic [ref=e58]:
+        - heading "Planes Above Me" [level=3] [ref=e59]
+        - generic [ref=e60]:
+          - combobox [ref=e61]:
+            - option "10 miles"
+            - option "25 miles" [selected]
+            - option "50 miles"
+          - button "Find Nearby" [ref=e62] [cursor=pointer]
+  - button "Open Next.js Dev Tools" [ref=e68] [cursor=pointer]:
+    - img [ref=e69]
+  - alert [ref=e72]
+```
