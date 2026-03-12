@@ -1,4 +1,4 @@
-# ✈️ STRATOVIEW
+# STRATOVIEW
 
 Real-time global aircraft tracking and visualization platform built with Next.js, TypeScript, and Leaflet.
 
@@ -7,7 +7,7 @@ Real-time global aircraft tracking and visualization platform built with Next.js
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 
-## 🌟 Features
+## Features
 
 - **Real-Time Aircraft Tracking**: Visualize thousands of aircraft worldwide in real-time
 - **Interactive Map**: Powered by Leaflet.js with OpenStreetMap tiles
@@ -18,7 +18,7 @@ Real-time global aircraft tracking and visualization platform built with Next.js
 - **Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 - **Production Ready**: Includes comprehensive testing, error handling, and logging
 
-## 🚀 Tech Stack
+## Tech Stack
 
 ### Frontend
 
@@ -39,7 +39,7 @@ Real-time global aircraft tracking and visualization platform built with Next.js
 - **CockroachDB** (PostgreSQL compatible)
 - **Prisma ORM**
 
-# ✈️ StratoView
+# StratoView
 
 StratoView is a real-time global aircraft tracking and visualization platform built with Next.js, TypeScript, and Leaflet.
 
