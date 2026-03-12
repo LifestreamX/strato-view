@@ -8,7 +8,7 @@ export default function SignInPage() {
     <div className="min-h-screen bg-gradient-to-br from-aviation-dark via-blue-900 to-aviation-dark flex items-center justify-center">
       <div className="bg-white/10 backdrop-blur-md p-8 rounded-xl shadow-2xl max-w-md w-full">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-2">✈️ STRATOVIEW</h1>
+          <h1 className="text-4xl font-bold text-white mb-2">✈️ StratoView</h1>
           <p className="text-blue-200">Sign in to save your preferences</p>
         </div>
 

@@ -14,7 +14,7 @@ export function Navigation() {
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-2">
             <span className="text-2xl">✈️</span>
-            <span className="text-white font-bold text-xl">STRATOVIEW</span>
+            <span className="text-white font-bold text-xl">StratoView</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-6">

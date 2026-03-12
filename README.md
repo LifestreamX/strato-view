@@ -1,4 +1,4 @@
-# STRATOVIEW
+# StratoView
 
 Real-time global aircraft tracking and visualization platform built with Next.js, TypeScript, and Leaflet.
 

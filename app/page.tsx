@@ -6,7 +6,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-32 flex flex-col items-center max-w-4xl">
         <div className="text-center w-full space-y-6">
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-            ✈️ STRATOVIEW
+            ✈️ StratoView
           </h1>
           <p className="text-lg md:text-xl text-blue-200 mb-12">
             Real-Time Global Aircraft Tracking & Visualization
