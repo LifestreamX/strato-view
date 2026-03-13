@@ -91,61 +91,6 @@ body::before {
   z-index: 0;
 }
 
-/* Leaflet CSS overrides */
-.leaflet-container {
-  width: 100%;
-  height: 100%;
-}
-
-.leaflet-popup-content-wrapper {
-  background: rgba(10, 25, 41, 0.95);
-  color: white;
-  border-radius: 8px;
-}
-
-.leaflet-popup-tip {
-  background: rgba(10, 25, 41, 0.95);
-}
-
-.aircraft-marker {
-  background: transparent;
-  border: none;
-  transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  will-change: transform;
-}
-
-.aircraft-icon {
-  font-size: 24px;
-  color: #42a5f5;
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Prevent flicker during marker updates */
-.leaflet-marker-icon {
-  transition: opacity 0.2s ease;
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-  transform: translateZ(0);
-  -webkit-transform: translateZ(0);
-}
-
-/* Ensure markers stay visible during updates */
-.leaflet-marker-pane {
-  z-index: 600;
-}
-
-/* Smooth cluster animations */
-.marker-cluster {
-  transition: all 0.3s ease;
-}
-
-.aircraft-trail {
-  stroke: #42a5f5;
-  stroke-width: 2;
-  opacity: 0.6;
-  fill: none;
-}
-
 /* Hero sky background (gradient + subtle clouds overlay) */
 .hero-bg {
   background-image:

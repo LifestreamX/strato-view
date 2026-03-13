@@ -1,4 +1,8 @@
-import { CacheEntry } from '@/types/aircraft'
+interface CacheEntry<T> {
+  data: T
+  timestamp: number
+  expiresAt: number
+}
 
 class MemoryCache {
   private cache: Map<string, CacheEntry<any>>

@@ -19,10 +19,10 @@ export function Navigation() {
 
           <div className="hidden md:flex items-center space-x-6">
             <Link
-              href="/map"
+              href="/asteroids"
               className="text-white hover:text-purple-300 transition duration-300"
             >
-              Live Map
+              Asteroids
             </Link>
             <Link
               href="/dashboard"
