@@ -1,3 +1,7 @@
+// Used for the /api/aircraft/nearby endpoint
+export interface NearbyAircraft extends NormalizedAircraft {
+  distance: number;
+}
 export interface AircraftState {
   icao24: string
   callsign: string | null

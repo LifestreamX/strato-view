@@ -8,13 +8,13 @@ export async function GET(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: asteroidId } = await context.params;
-    const searchParams = request.nextUrl.searchParams;
-    const noCache = searchParams.get('noCache') === 'true';
+    const { id: asteroidId } = await context.params
+    const searchParams = request.nextUrl.searchParams
+    const noCache = searchParams.get('noCache') === 'true'
 
-    console.log(`[Asteroid Details API] Fetching asteroid ID: ${asteroidId}`);
+    console.log(`[Asteroid Details API] Fetching asteroid ID: ${asteroidId}`)
 
-    const asteroid = await nasaAPI.getAsteroidById(asteroidId, !noCache);
+    const asteroid = await nasaAPI.getAsteroidById(asteroidId, !noCache)
 
     if (!asteroid) {
       return NextResponse.json(
@@ -23,26 +23,26 @@ export async function GET(
           timestamp: Date.now(),
         },
         { status: 404 }
-      );
+      )
     }
 
-    const normalized = nasaAPI.normalizeAsteroid(asteroid);
+    const normalized = nasaAPI.normalizeAsteroid(asteroid)
 
-    console.log(`[Asteroid Details API] Found: ${asteroid.name}`);
+    console.log(`[Asteroid Details API] Found: ${asteroid.name}`)
 
     return NextResponse.json({
       asteroid: normalized,
       raw: asteroid,
       timestamp: Date.now(),
-    });
+    })
   } catch (error) {
-    console.error('Asteroid details API error:', error);
+    console.error('Asteroid details API error:', error)
     return NextResponse.json(
       {
         error: 'Internal server error',
         timestamp: Date.now(),
       },
       { status: 500 }
-    );
+    )
   }
 }
