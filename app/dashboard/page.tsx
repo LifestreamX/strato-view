@@ -66,6 +66,32 @@ export default function DashboardPage() {
     }
   }
 
+  const handleToggleFavoriteModal = async (asteroid: NormalizedAsteroid) => {
+    // If this asteroid is already saved, remove it. Otherwise add it.
+    const existing = savedAsteroids.find(s => s.asteroidId === asteroid.id)
+    if (existing) {
+      await handleDelete(existing.id)
+      setIsModalOpen(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/user/saved-asteroids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          asteroidId: asteroid.id,
+          asteroidName: asteroid.name,
+        }),
+      })
+      if (res.ok) {
+        fetchSavedAsteroids()
+      }
+    } catch (e) {
+      console.error('Error saving favorite from modal', e)
+    }
+  }
+
   if (status === 'loading' || loading) {
     return (
       <div className="min-h-screen">
@@ -155,7 +181,14 @@ export default function DashboardPage() {
                 asteroid={selectedAsteroid as any}
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                isFavorite={true}
+                onToggleFavorite={handleToggleFavoriteModal}
+                isFavorite={
+                  selectedAsteroid
+                    ? savedAsteroids.some(
+                        s => s.asteroidId === selectedAsteroid.id
+                      )
+                    : false
+                }
               />
             </div>
           )}
