@@ -236,7 +236,7 @@ npm run prisma:studio
 
 ## 📝 ENVIRONMENT VARIABLES
 
-All environment variables are configured in `.env.local` and `.env`:
+All environment variables are configured in `.env`:
 
 - ✅ DATABASE_URL (CockroachDB connection)
 - ✅ NEXTAUTH_URL (http://localhost:3000)

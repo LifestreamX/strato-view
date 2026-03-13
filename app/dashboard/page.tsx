@@ -27,17 +27,17 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (status === 'authenticated') {
-      fetchSavedAircraft()
+      fetchSavedAsteroids()
     }
   }, [status])
 
-  const fetchSavedAircraft = async () => {
+  const fetchSavedAsteroids = async () => {
     try {
-      const response = await fetch('/api/user/saved-aircraft')
+      const response = await fetch('/api/user/saved-asteroids')
       const data = await response.json()
 
       if (response.ok) {
-        setSavedAsteroids(data.savedAircraft || [])
+        setSavedAsteroids(data.savedAsteroids || [])
       }
     } catch (error) {
       console.error('Error fetching saved asteroids:', error)
@@ -48,7 +48,7 @@ export default function DashboardPage() {
 
   const handleDelete = async (id: string) => {
     try {
-      const response = await fetch(`/api/user/saved-aircraft/${id}`, {
+      const response = await fetch(`/api/user/saved-asteroids/${id}`, {
         method: 'DELETE',
       })
 

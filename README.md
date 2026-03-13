@@ -80,4 +80,4 @@ npm run dev
 
 ## License
 
-MIT License 3. **Environment variables are already configured** in `.env.local`:
+MIT License 3. **Environment variables are already configured** in `.env`:

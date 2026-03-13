@@ -32,9 +32,13 @@ export function Navigation() {
             </Link>
 
             {session ? (
-              <div className="relative group flex items-center space-x-2">
+              <div className="relative flex items-center space-x-2">
                 {session.user?.image && (
-                  <button className="focus:outline-none" tabIndex={0}>
+                  <button
+                    className="focus:outline-none"
+                    tabIndex={0}
+                    onClick={() => setIsMenuOpen(prev => !prev)}
+                  >
                     <img
                       src={session.user.image}
                       alt={session.user.name || 'Profile'}
@@ -43,14 +47,19 @@ export function Navigation() {
                   </button>
                 )}
                 <span className="text-purple-200">{session.user?.name}</span>
-                <div className="absolute right-0 mt-12 w-40 bg-black/90 rounded-lg shadow-lg py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50">
-                  <button
-                    onClick={() => signOut()}
-                    className="block w-full text-left px-4 py-2 text-white hover:bg-purple-700 rounded transition"
-                  >
-                    Sign Out
-                  </button>
-                </div>
+                {isMenuOpen && (
+                  <div className="absolute right-0 mt-12 w-40 bg-black/90 rounded-lg shadow-lg py-2 z-50">
+                    <button
+                      onClick={() => {
+                        setIsMenuOpen(false)
+                        signOut()
+                      }}
+                      className="block w-full text-left px-4 py-2 text-white hover:bg-purple-700 rounded transition"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               <Link
