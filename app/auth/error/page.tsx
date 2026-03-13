@@ -1,8 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import React, { Suspense } from 'react'
 
-export default function AuthError() {
+function ErrorContent() {
+  const searchParams = useSearchParams()
+  const error = searchParams.get('error')
+
   return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="bg-white/5 backdrop-blur-md p-8 rounded-xl shadow-2xl max-w-md w-full text-center">
@@ -10,7 +15,9 @@ export default function AuthError() {
           Authentication Error
         </h1>
         <p className="text-purple-200 mb-6">
-          There was a problem signing you in. Please try again.
+          {error
+            ? `Error: ${error}`
+            : 'There was a problem signing you in. Please try again.'}
         </p>
         <Link
           href="/auth/signin"
@@ -20,5 +27,13 @@ export default function AuthError() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function AuthError() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <ErrorContent />
+    </Suspense>
   )
 }
