@@ -5,19 +5,18 @@ import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import { Navigation } from '@/components/ui/Navigation'
 
-interface SavedAircraft {
+interface SavedAsteroid {
   id: string
-  icao24: string
-  callsign: string | null
-  country: string | null
-  notes: string | null
+  referenceId?: string
+  name?: string | null
+  notes?: string | null
   createdAt: string
 }
 
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [savedAircraft, setSavedAircraft] = useState<SavedAircraft[]>([])
+  const [savedAsteroids, setSavedAsteroids] = useState<SavedAsteroid[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -38,10 +37,10 @@ export default function DashboardPage() {
       const data = await response.json()
 
       if (response.ok) {
-        setSavedAircraft(data.savedAircraft)
+        setSavedAsteroids(data.savedAircraft || [])
       }
     } catch (error) {
-      console.error('Error fetching saved aircraft:', error)
+      console.error('Error fetching saved asteroids:', error)
     } finally {
       setLoading(false)
     }
@@ -54,16 +53,16 @@ export default function DashboardPage() {
       })
 
       if (response.ok) {
-        setSavedAircraft(savedAircraft.filter(ac => ac.id !== id))
+        setSavedAsteroids(savedAsteroids.filter(a => a.id !== id))
       }
     } catch (error) {
-      console.error('Error deleting aircraft:', error)
+      console.error('Error deleting favorite asteroid:', error)
     }
   }
 
   if (status === 'loading' || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-aviation-dark via-blue-900 to-aviation-dark">
+      <div className="min-h-screen">
         <Navigation />
         <div className="container mx-auto px-4 pt-24">
           <div className="text-center text-white text-xl">Loading...</div>
@@ -73,53 +72,51 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-aviation-dark via-blue-900 to-aviation-dark">
+    <div className="min-h-screen">
       <Navigation />
 
       <div className="container mx-auto px-4 pt-24 pb-12">
-        <h1 className="text-4xl font-bold text-white mb-8">Dashboard</h1>
+        <h1 className="text-4xl font-bold text-white mb-8">
+          NeoView Dashboard
+        </h1>
 
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 mb-8">
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6 mb-8">
           <h2 className="text-2xl font-bold text-white mb-4">
             Welcome back, {session?.user?.name}!
           </h2>
-          <p className="text-blue-200">
-            Track your favorite aircraft and manage your preferences.
+          <p className="text-purple-200">
+            Track your favorite asteroids and manage your preferences.
           </p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6">
-          <h2 className="text-2xl font-bold text-white mb-4">Saved Aircraft</h2>
+        <div className="bg-white/5 backdrop-blur-sm rounded-lg p-6">
+          <h2 className="text-2xl font-bold text-white mb-4">
+            Favorite Asteroids
+          </h2>
 
-          {savedAircraft.length === 0 ? (
-            <p className="text-blue-200">
-              No saved aircraft yet. Click on aircraft in the map to save them!
+          {savedAsteroids.length === 0 ? (
+            <p className="text-purple-200">
+              No favorites yet. Explore asteroids and save ones you like!
             </p>
           ) : (
             <div className="space-y-4">
-              {savedAircraft.map(aircraft => (
+              {savedAsteroids.map(item => (
                 <div
-                  key={aircraft.id}
+                  key={item.id}
                   className="bg-white/5 p-4 rounded-lg flex justify-between items-center"
                 >
                   <div>
                     <h3 className="text-white font-bold text-lg">
-                      {aircraft.callsign || 'Unknown'}
+                      {item.name || item.referenceId || 'Unknown'}
                     </h3>
-                    <p className="text-blue-200 text-sm">
-                      ICAO24: {aircraft.icao24}
-                    </p>
-                    <p className="text-blue-200 text-sm">
-                      Country: {aircraft.country}
-                    </p>
-                    {aircraft.notes && (
-                      <p className="text-blue-300 text-sm mt-2">
-                        {aircraft.notes}
+                    {item.notes && (
+                      <p className="text-purple-300 text-sm mt-2">
+                        {item.notes}
                       </p>
                     )}
                   </div>
                   <button
-                    onClick={() => handleDelete(aircraft.id)}
+                    onClick={() => handleDelete(item.id)}
                     className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded transition duration-300"
                   >
                     Delete

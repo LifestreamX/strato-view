@@ -19,29 +19,6 @@ async function main() {
     },
   })
 
-  // Add a saved aircraft
-  await prisma.savedAircraft.create({
-    data: {
-      userId: user.id,
-      icao24: 'abc123',
-      callsign: 'TEST123',
-      country: 'United States',
-      notes: 'Demo aircraft',
-    },
-  })
-
-  // Add a saved location
-  await prisma.savedLocation.create({
-    data: {
-      userId: user.id,
-      name: 'Home',
-      latitude: 40.7128,
-      longitude: -74.006,
-      radius: 25,
-      description: 'Home location',
-    },
-  })
-
   console.log('Seed data inserted!')
 }
 

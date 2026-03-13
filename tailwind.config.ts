@@ -9,11 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        aviation: {
-          dark: '#0a1929',
-          blue: '#1976d2',
-          light: '#42a5f5',
-          accent: '#ff6b35',
+        space: {
+          dark: '#0a0a1e',
+          purple: '#9333ea',
+          pink: '#ec4899',
+          cyan: '#22d3ee',
         },
       },
     },

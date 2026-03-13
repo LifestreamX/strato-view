@@ -6,9 +6,9 @@ import { SessionProvider } from '@/components/providers/SessionProvider'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'StratoView - Real-Time Global Aircraft Tracking',
+  title: 'NeoView - Near Earth Object Asteroid Tracker',
   description:
-    'Visualize global aircraft activity in real time with powerful filtering and analytics',
+    'Track near-Earth asteroids in real-time with NASA data. Visualize asteroid approaches, sizes, velocities, and potential hazards.',
 }
 
 export default function RootLayout({

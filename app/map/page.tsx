@@ -13,7 +13,7 @@ const AircraftMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-full flex items-center justify-center bg-aviation-dark">
+      <div className="w-full h-full flex items-center justify-center bg-black">
         <div className="text-white text-xl">Loading map...</div>
       </div>
     ),
@@ -125,11 +125,11 @@ export default function MapPage() {
           onToggle={() => setIsFilterOpen(!isFilterOpen)}
         />
 
-        <div className="fixed bottom-6 right-6 z-[1000] bg-aviation-dark/90 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg max-w-xs w-64">
+        <div className="fixed bottom-6 right-6 z-[1000] bg-black/60 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg max-w-xs w-64">
           <div className="text-2xl font-bold mb-2">
             {filteredAircraft.length.toLocaleString()}
           </div>
-          <div className="text-sm text-blue-200">Aircraft Tracked</div>
+          <div className="text-sm text-purple-200">Aircraft Tracked</div>
           <div className="mt-2 pt-2 border-t border-blue-500/30">
             <div className="text-xs text-gray-300">
               Source:{' '}
@@ -153,13 +153,13 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="fixed bottom-4 left-4 z-[1000] bg-aviation-dark/90 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg">
+        <div className="fixed bottom-4 left-4 z-[1000] bg-black/60 backdrop-blur-sm text-white p-4 rounded-lg shadow-lg">
           <h3 className="font-bold mb-2">Planes Above Me</h3>
           <div className="space-y-2">
             <select
               value={nearbyRadius}
               onChange={e => setNearbyRadius(Number(e.target.value))}
-              className="w-full px-3 py-2 bg-aviation-dark text-white border border-aviation-blue/40 rounded focus:border-aviation-blue focus:bg-aviation-dark/90 focus:text-white hover:bg-aviation-blue/20 transition-colors duration-200 outline-none"
+              className="w-full px-3 py-2 bg-black/40 text-white border border-purple-400/40 rounded focus:border-purple-400 focus:bg-black/60 focus:text-white hover:bg-purple-600/20 transition-colors duration-200 outline-none"
             >
               <option value={10}>10 miles</option>
               <option value={25}>25 miles</option>
@@ -168,7 +168,7 @@ export default function MapPage() {
             <button
               onClick={handleFindNearby}
               disabled={locationLoading}
-              className="w-full bg-aviation-blue hover:bg-aviation-light text-white font-semibold py-2 px-4 rounded transition duration-300 disabled:opacity-50"
+              className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300 disabled:opacity-50"
             >
               {locationLoading ? 'Getting location...' : 'Find Nearby'}
             </button>

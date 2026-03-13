@@ -9,34 +9,34 @@ export function Navigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-[1000] bg-aviation-dark/95 backdrop-blur-md shadow-lg">
+    <nav className="fixed top-0 left-0 right-0 z-[1000] bg-black/40 backdrop-blur-md shadow-lg">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center space-x-2">
-            <span className="text-2xl">✈️</span>
-            <span className="text-white font-bold text-xl">StratoView</span>
+            <span className="text-2xl">🚀</span>
+            <span className="text-white font-bold text-xl">NeoView</span>
           </Link>
 
           <div className="hidden md:flex items-center space-x-6">
             <Link
               href="/map"
-              className="text-white hover:text-aviation-light transition duration-300"
+              className="text-white hover:text-purple-300 transition duration-300"
             >
               Live Map
             </Link>
             <Link
               href="/dashboard"
-              className="text-white hover:text-aviation-light transition duration-300"
+              className="text-white hover:text-purple-300 transition duration-300"
             >
               Dashboard
             </Link>
 
             {session ? (
               <>
-                <span className="text-blue-200">{session.user?.name}</span>
+                <span className="text-purple-200">{session.user?.name}</span>
                 <button
                   onClick={() => signOut()}
-                  className="bg-aviation-accent hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded transition duration-300"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300"
                 >
                   Sign Out
                 </button>
@@ -44,7 +44,7 @@ export function Navigation() {
             ) : (
               <Link
                 href="/auth/signin"
-                className="bg-aviation-blue hover:bg-aviation-light text-white font-semibold py-2 px-4 rounded transition duration-300"
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300"
               >
                 Sign In
               </Link>
@@ -64,22 +64,22 @@ export function Navigation() {
             <div className="flex flex-col space-y-3">
               <Link
                 href="/map"
-                className="text-white hover:text-aviation-light transition duration-300"
+                className="text-white hover:text-purple-300 transition duration-300"
               >
                 Live Map
               </Link>
               <Link
                 href="/dashboard"
-                className="text-white hover:text-aviation-light transition duration-300"
+                className="text-white hover:text-purple-300 transition duration-300"
               >
                 Dashboard
               </Link>
               {session ? (
                 <>
-                  <span className="text-blue-200">{session.user?.name}</span>
+                  <span className="text-purple-200">{session.user?.name}</span>
                   <button
                     onClick={() => signOut()}
-                    className="bg-aviation-accent hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded transition duration-300 text-left"
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300 text-left"
                   >
                     Sign Out
                   </button>
@@ -87,7 +87,7 @@ export function Navigation() {
               ) : (
                 <Link
                   href="/auth/signin"
-                  className="bg-aviation-blue hover:bg-aviation-light text-white font-semibold py-2 px-4 rounded transition duration-300"
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300"
                 >
                   Sign In
                 </Link>

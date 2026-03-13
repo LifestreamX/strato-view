@@ -49,9 +49,10 @@ model User {
   accounts      Account[]
   sessions      Session[]
   
-  savedAircraft   SavedAircraft[]
-  savedLocations  SavedLocation[]
-  userPreferences UserPreferences?
+  // savedAircraft      SavedAircraft[]
+  // savedLocations     SavedLocation[]
+  favoriteAsteroids  FavoriteAsteroid[]
+  userPreferences    UserPreferences?
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -65,39 +66,22 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model SavedAircraft {
-  id        String   @id @default(cuid())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  icao24    String
-  callsign  String?
-  country   String?
-  notes     String?
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  @@unique([userId, icao24])
+model FavoriteAsteroid {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  asteroidId   String   // NASA NEO ID (e.g., "3542519")
+  asteroidName String   // Display name (e.g., "(2010 PK9)")
+  notes        String?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, asteroidId])
   @@index([userId])
-  @@index([icao24])
-}
-
-model SavedLocation {
-  id          String   @id @default(cuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  name        String
-  latitude    Float
-  longitude   Float
-  radius      Float    @default(25.0)
-  description String?
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([userId])
+  @@index([asteroidId])
 }
 
 model UserPreferences {

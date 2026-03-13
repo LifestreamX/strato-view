@@ -20,7 +20,7 @@ export interface AircraftState {
 
 export interface OpenSkyResponse {
   time: number
-  states: (string | number | boolean | null)[][] | null
+  states: AircraftState[]
 }
 
 export interface NormalizedAircraft {
@@ -32,9 +32,9 @@ export interface NormalizedAircraft {
   altitude: number
   velocity: number
   heading: number
-  lastUpdate: number
-  onGround: boolean
   verticalRate: number
+  onGround: boolean
+  lastContact: number
 }
 
 export interface AircraftFilters {
@@ -45,28 +45,4 @@ export interface AircraftFilters {
   countries?: string[]
   icao24?: string
   callsign?: string
-}
-
-export interface UserLocation {
-  latitude: number
-  longitude: number
-}
-
-export interface NearbyAircraft extends NormalizedAircraft {
-  distance: number
-}
-
-export interface AircraftTrail {
-  icao24: string
-  positions: Array<{
-    lat: number
-    lng: number
-    timestamp: number
-  }>
-}
-
-export interface CacheEntry<T> {
-  data: T
-  timestamp: number
-  expiresAt: number
 }
