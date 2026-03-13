@@ -76,7 +76,7 @@ export default function AsteroidsPage() {
   }
 
   return (
-    <div className="min-h-screen relative">
+    <div className="min-h-screen relative pt-20">
       <div className="container mx-auto px-4 py-8 space-y-6 relative z-10">
         {/* Header */}
         <div className="flex items-center justify-between">

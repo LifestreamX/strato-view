@@ -32,15 +32,26 @@ export function Navigation() {
             </Link>
 
             {session ? (
-              <>
+              <div className="relative group flex items-center space-x-2">
+                {session.user?.image && (
+                  <button className="focus:outline-none" tabIndex={0}>
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || 'Profile'}
+                      className="w-9 h-9 rounded-full border-2 border-purple-400 shadow-md hover:scale-105 transition-transform"
+                    />
+                  </button>
+                )}
                 <span className="text-purple-200">{session.user?.name}</span>
-                <button
-                  onClick={() => signOut()}
-                  className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300"
-                >
-                  Sign Out
-                </button>
-              </>
+                <div className="absolute right-0 mt-12 w-40 bg-black/90 rounded-lg shadow-lg py-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity z-50">
+                  <button
+                    onClick={() => signOut()}
+                    className="block w-full text-left px-4 py-2 text-white hover:bg-purple-700 rounded transition"
+                  >
+                    Sign Out
+                  </button>
+                </div>
+              </div>
             ) : (
               <Link
                 href="/auth/signin"
