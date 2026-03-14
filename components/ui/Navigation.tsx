@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
 
 export function Navigation() {
@@ -78,20 +79,23 @@ export function Navigation() {
                     onClick={() => setIsProfileOpen(p => !p)}
                     aria-expanded={isProfileOpen}
                   >
-                    <img
+                    <Image
                       src={session.user.image}
                       alt={session.user.name || 'Profile'}
+                      width={36}
+                      height={36}
+                      unoptimized
                       className="w-9 h-9 rounded-full border-2 border-purple-400 shadow-md hover:scale-105 transition-transform"
                     />
                   </button>
                 )}
                 <span className="text-purple-200">{session.user?.name}</span>
                 {isProfileOpen && (
-                  <div className="absolute right-0 mt-12 w-40 bg-black/90 rounded-lg shadow-lg py-2 z-50">
+                  <div className="absolute right-0 top-full mt-2 w-40 bg-black/90 rounded-lg shadow-lg py-2 z-50">
                     <button
                       type="button"
                       onClick={() => signOut()}
-                      className="block w-full text-left px-4 py-2 text-white hover:bg-purple-700 rounded transition"
+                      className="block w-full text-left px-4 py-2 bg-purple-200 text-black hover:bg-purple-300 rounded transition"
                     >
                       Sign Out
                     </button>
@@ -161,7 +165,7 @@ export function Navigation() {
                         setIsMobileOpen(false)
                         signOut()
                       }}
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold py-2 px-4 rounded transition duration-300 text-left"
+                      className="block w-full text-left px-4 py-2 bg-purple-200 text-black hover:bg-purple-300 font-semibold rounded transition duration-300"
                     >
                       Sign Out
                     </button>
