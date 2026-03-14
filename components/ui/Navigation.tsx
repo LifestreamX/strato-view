@@ -9,6 +9,8 @@ export function Navigation() {
   const [isProfileOpen, setIsProfileOpen] = useState(false)
   const [isMobileOpen, setIsMobileOpen] = useState(false)
   const profileRef = useRef<HTMLDivElement | null>(null)
+  const hamburgerRef = useRef<HTMLButtonElement | null>(null)
+  const mobileMenuRef = useRef<HTMLDivElement | null>(null)
 
   // click-outside for profile dropdown only (desktop)
   useEffect(() => {
@@ -23,6 +25,23 @@ export function Navigation() {
     document.addEventListener('click', onDoc)
     return () => document.removeEventListener('click', onDoc)
   }, [])
+
+  // Close mobile menu when clicking/tapping outside the mobile menu or hamburger
+  useEffect(() => {
+    if (!isMobileOpen) return
+    function handleOutside(e: MouseEvent) {
+      const target = e.target as Node
+      if (mobileMenuRef.current && mobileMenuRef.current.contains(target)) {
+        return
+      }
+      if (hamburgerRef.current && hamburgerRef.current.contains(target)) {
+        return
+      }
+      setIsMobileOpen(false)
+    }
+    document.addEventListener('click', handleOutside)
+    return () => document.removeEventListener('click', handleOutside)
+  }, [isMobileOpen])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-[1000] bg-black/40 backdrop-blur-md shadow-lg">
@@ -91,6 +110,7 @@ export function Navigation() {
 
           {/* Hamburger */}
           <button
+            ref={hamburgerRef}
             type="button"
             onClick={() => setIsMobileOpen(v => !v)}
             className="md:hidden text-white text-2xl p-2 relative z-50"
@@ -112,6 +132,7 @@ export function Navigation() {
             />
             <div
               id="mobile-menu"
+              ref={mobileMenuRef}
               className="md:hidden pb-4 relative z-[1000] bg-black/40 backdrop-blur-md"
             >
               <div className="flex flex-col space-y-3">
